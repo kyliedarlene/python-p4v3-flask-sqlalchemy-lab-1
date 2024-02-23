@@ -4,7 +4,7 @@
 from flask import Flask, make_response
 from flask_migrate import Migrate
 
-from models import db, Earthquake
+from models import *
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
@@ -22,6 +22,31 @@ def index():
 
 # Add views here
 
+@app.route('/earthquakes/<int:id>')
+def earthquakes_by_id(id):
+    earthquake = db.session.get(Earthquake, id)
+
+    if earthquake:
+        body = earthquake.to_dict()
+        status = 200
+    else: 
+        body = {'message': f"Earthquake {id} not found."}
+        status = 404
+
+    return make_response(body, status)
+
+@app.route('/earthquakes/magnitude/<float:magnitude>')
+def earthquakes_by_magnitude(magnitude):
+    earthquakes = []
+    for earthquake in Earthquake.query.filter(Earthquake.magnitude >= magnitude).all():
+        earthquakes.append(earthquake.to_dict())
+    print(earthquakes)
+
+    body = {
+        'count': len(earthquakes),
+        'quakes': earthquakes
+    }
+    return make_response(body, 200)
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
